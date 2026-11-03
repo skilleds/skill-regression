@@ -3,7 +3,7 @@ name = "schematize-regression"
 tag = "Disciplina · Regressão"
 status = "beta"
 order = 51
-current_version = "0.1.1"
+current_version = "0.2.0"
 href = "/regression"
 
 [descriptions]

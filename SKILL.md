@@ -1,7 +1,7 @@
 ---
 name: schematize-regression
 metadata:
-  version: 0.1.1
+  version: 0.2.0
 description: >-
   Regressão: bug corrigido nunca volta. Teste vermelho antes do fix, golden master, perf e visual com baseline, git bisect. Use ao corrigir bug ou refatorar legado. Pirâmide: schematize-qa.
 ---
@@ -16,7 +16,7 @@ o guardava foi apagado ou pulado, ou o "snapshot atualizado" aceitou o comportam
 skill é a dona desse ciclo "nunca volta" e das provas que o sustentam: teste vermelho primeiro, teste
 permanente, caracterização de legado, seleção da suíte, desempenho, visual e caça ao commit culpado.
 
-**Versão:** skill `schematize-regression` v0.1.1. Changelog em `CHANGELOG.md`.
+**Versão:** skill `schematize-regression` v0.2.0. Changelog em `CHANGELOG.md`.
 
 ## Precedência e herança (leia antes de divergir)
 

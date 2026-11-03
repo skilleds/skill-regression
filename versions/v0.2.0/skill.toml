@@ -1,0 +1,12 @@
+slug = "regression"
+name = "schematize-regression"
+tag = "Disciplina · Regressão"
+status = "beta"
+order = 51
+current_version = "0.2.0"
+href = "/regression"
+
+[descriptions]
+pt = "Regressão da casa: bug corrigido nunca volta. Teste vermelho antes do fix, teste de regressão permanente (skip só com dono e prazo), golden master antes de refatorar legado, snapshot com diff revisado, suíte completa no merge, benchmark e visual com baseline versionado, git bisect run e incidente que só fecha com teste. Gate check-regression.sh."
+en = "The house's regression discipline: a fixed bug never comes back. Red test before the fix, permanent regression tests (skips only with owner and deadline), golden master before refactoring legacy, reviewed snapshot diffs, full suite on merge, benchmarks and visual checks with versioned baselines, git bisect run, and incidents that only close with a test. Gate check-regression.sh."
+es = "La disciplina de regresión de la casa: un bug corregido nunca vuelve. Test en rojo antes del fix, tests de regresión permanentes (skip solo con dueño y plazo), golden master antes de refactorizar legado, snapshots con diff revisado, suite completa en el merge, benchmarks y visual con baseline versionado, git bisect run e incidente que solo cierra con test. Gate check-regression.sh."
