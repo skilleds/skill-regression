@@ -13,6 +13,7 @@ critério de fechamento:
 
 - [ ] existe teste que **falhava** antes do fix e passa depois, no nível certo da pirâmide;
 - [ ] o teste cita o ID do incidente;
+- [ ] incidente de **resiliência** (vizinho caiu, item perdido/duplicado, fila travada) vira um dos 7 testes do piso 28 e a dependência entra em `resilience.yml`;
 - [ ] o commit culpado está no postmortem quando foi bisseccionado (`references/bisect.md`);
 - [ ] a causa que a suíte não pegou está explicada (faltou caso? nível errado? teste pulado?);
 - [ ] se a causa for classe de erro (não só instância), há gate/ADR conforme `schematize-incident ->

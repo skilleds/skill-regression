@@ -18,7 +18,7 @@ contagem de casos), a cobertura passou para nível melhor. Em todos, o marcador 
 
 | Marcador | Onde | Autoriza |
 |---|---|---|
-| `regression-skip: <motivo> <@dono> <AAAA-MM-DD>` | na linha do skip ou na mensagem de commit | skip, quarentena ou remoção de teste |
+| `regression-skip: <motivo> <@dono> <AAAA-MM-DD>` | na linha do skip, ou na mensagem de commit **com o arquivo no fim da linha** (vale só para ele) | skip, quarentena ou remoção de teste |
 | `regression-ok: fix-sem-teste <motivo>` | corpo do commit `fix:` | fix sem teste automatizável possível |
 | `regression-snapshot: <motivo>` | corpo do commit | snapshot/golden alterado sem teste ao lado |
 

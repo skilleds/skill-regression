@@ -68,7 +68,7 @@ que **o que já foi provado continua provado**.
 | `/reg-load` | carrega à força o corpo normativo (bug primeiro, permanência, caracterização, suíte, desempenho, visual, bisect, métricas) |
 | `/reg-bug` | transforma um bug em teste vermelho reprodutor, visto falhar, antes de qualquer fix |
 | `/reg-bisect` | acha o commit culpado com `git bisect run` e o teste reprodutor |
-| `/reg-suite` | planeja ou audita a suíte: completa vs impacto, nightly, quarentena |
+| `/reg-suite` | planeja ou audita a suíte: completa vs impacto, pré-hml, quarentena |
 | `/reg-perf` | baseline versionado e limiar de benchmark que trava o CI |
 | `/reg-visual` | baseline visual por componente/rota, threshold e revisão do diff |
 | `/reg-review` | revisa um PR/diff contra o piso e roda `scripts/check-regression.sh` |
@@ -78,7 +78,7 @@ que **o que já foi provado continua provado**.
 ## Como usar
 
 1. **Rode o gate antes de opinar:** `bash scripts/check-regression.sh [dir] [--range A..B]` (padrão
-   `origin/main..HEAD`). `0` passa · `1` reprova · `2` nada para verificar (não é aprovação).
+   último marco `hml-*`/`v*`; sem tag, `origin/main..HEAD` se houver commits, senão os últimos 20 — push imediato não esvazia o range). Ligue ao `tools/ci.sh`/pre-commit: é o gate local por commit. `0` passa · `1` reprova · `2` nada para verificar (não é aprovação).
 2. **Veio um bug?** `/reg-bug`: teste vermelho primeiro (`references/bug-primeiro.md`), fix depois.
 3. **Teste sendo apagado, pulado ou "atualizado"?** `references/permanencia.md` e
    `references/caracterizacao.md` dizem o que exige ADR, dono e prazo.
@@ -92,7 +92,7 @@ que **o que já foi provado continua provado**.
 | Bug -> teste vermelho -> fix; nível da pirâmide; ID do bug; critério de "visto falhar" | `references/bug-primeiro.md` |
 | Teste permanente; skip e quarentena com dono e prazo; flaky não é regressão; marcadores do gate | `references/permanencia.md` |
 | Golden master antes de refatorar legado; approval/snapshot com revisão humana | `references/caracterizacao.md` |
-| Suíte completa vs seleção por impacto; merge, nightly; nunca pular a regressão | `references/suite.md` |
+| Suíte completa vs seleção por impacto; local, pré-hml, release; nunca pular a regressão | `references/suite.md` |
 | Benchmark com baseline versionado, limiar, ambiente estável e comparação estatística | `references/desempenho.md` |
 | Baseline visual, threshold, estabilização (fonte, animação, dado), revisão do diff | `references/visual.md` |
 | Regressão de contrato, dados e prompt: quem é o dono e qual gate trava | `references/contrato-dados-ia.md` |
@@ -117,8 +117,7 @@ avisa de snapshot sem teste, fix sem ID e skip vencido.
    atual (inclusive os defeitos) primeiro; refatora depois, com o golden verde o tempo todo.
 5. **Snapshot nunca às cegas.** Approval/snapshot test exige revisão humana do diff do snapshot; atualizar
    em massa para "deixar o CI verde" é proibido e o gate avisa.
-6. **Suíte completa no merge/main e no nightly.** Seleção por impacto no PR só se a completa roda no
-   merge; nunca se pula a suíte de regressão para "agilizar".
+6. **Suíte completa pré-hml (tag) e sob demanda; por commit, local (piso 27).** Seleção por impacto só se a completa roda pré-hml; nunca se pula a suíte de regressão para "agilizar".
 7. **Desempenho tem baseline versionado e limiar que trava o CI**, em ambiente estável e com
    comparação estatística (várias amostras), nunca uma medição só.
 8. **Regressão visual tem baseline por componente/rota**, threshold, fonte/animação/dado
@@ -147,3 +146,5 @@ alternativas: instalar Codex ou Gemini, imagem de banco com licença comercial, 
 - **`schematize-api`**, **`schematize-data`**, **`schematize-ai`** — as donas da regressão de contrato, de dados e de prompt.
 - **`schematize-git`** — Conventional Commits (o gate lê `fix:`) e PR pequeno (o que torna o bisect barato).
 - **`schematize-engineering`** — a base: testes, DoD, efeito externo e orquestração.
+
+Herda os pisos 22–29 da `schematize-engineering` (git como trava de conclusão, deploy só do git, ops é o gate da IA, sem agents inúteis, relatório 30 min/handoff 6 h, CI remoto só antes do hml, microserviço autônomo, build em dev/hml + higiene).

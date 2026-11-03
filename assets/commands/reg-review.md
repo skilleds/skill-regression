@@ -1,6 +1,6 @@
 ---
 description: schematize-regression — revisa um PR/diff contra o piso de regressão: roda o gate e lê o que a máquina não lê.
-argument-hint: "<PR, branch ou range A..B; vazio = origin/main..HEAD>"
+argument-hint: "<PR, branch ou range A..B; vazio = último marco hml-*/v*>"
 ---
 
 # /reg-review — o diff passa; a prova presta?
@@ -15,7 +15,7 @@ Alvo: `${ARGUMENTS}`
    - **Enfraquecimento:** asserção relaxada, tolerância ampliada, mock que dribla o caminho do bug?
    - **Skip e quarentena:** cada marcador tem motivo real, dono e prazo? Há ADR para remoção?
    - **Snapshot/golden:** o diff do snapshot foi lido? Muda só o que o PR explica?
-   - **Suíte:** a seleção por impacto tem falha segura? A completa roda no merge?
+   - **Suíte:** a seleção por impacto tem falha segura? A completa roda pré-hml?
    - **Perf e visual:** mudança de baseline com motivo e dono?
    - **Incidente:** se o PR fecha incidente, há teste de regressão e o culpado registrado?
 3. Entregue achados por gravidade, com o trecho e a correção. Waiver só com marcador e motivo escritos.

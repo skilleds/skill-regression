@@ -7,34 +7,37 @@
 
 | Gatilho | O que roda | Pode ser reduzido? |
 |---|---|---|
-| Local, antes do commit | unitários rápidos e o teste do bug em curso | sim (é conveniência) |
-| PR | seleção por impacto **ou** completa | só com a completa no merge (item 3) |
-| Merge em `main` | **suíte completa** | **não** |
-| Nightly | completa + lenta (carga, perf, visual completo, e2e longo, mutação por amostragem) | não |
-| Antes do release | completa verde no commit exato do release | não |
+| Local, por commit (`tools/ci.sh` / pre-commit) | unitários rápidos, o teste do bug em curso e `scripts/check-regression.sh` | sim (é conveniência) |
+| Local, antes do push de uma entrega | seleção por impacto **ou** completa | só com a completa pré-hml (item 3) |
+| Pré-hml (tag `hml-*`, uma vez, sobre o acumulado) | **suíte completa** | **não** |
+| Sob demanda (`workflow_dispatch`) | completa + lenta (carga, perf, visual completo, e2e longo, mutação por amostragem) | não |
+| Antes do release (tag `v*`) | completa verde no commit exato do release | não |
 
-## 2. Suíte completa é o piso do merge
+Piso 27: não há "check obrigatório no PR" nem cron noturno por padrão. O gate por commit é **local**;
+o CI remoto roda só no dispatch e nas tags de promoção. `schedule` só com `justificativa:` escrita.
 
-Nenhum merge em `main` sem a suíte completa verde naquele commit (ou no resultado do merge queue).
-O CI do PR pode ser mais rápido que o do merge; **o do merge não pode ser mais fraco que ele**.
+## 2. Suíte completa é o piso da promoção
+
+Nenhuma promoção ao hml/release sem a suíte completa verde naquele commit exato. O gate local por
+commit pode ser mais rápido que o pré-hml; **o pré-hml não pode ser mais fraco que ele**.
 
 ## 3. Seleção por impacto (test impact analysis)
 
-Rodar só os testes afetados pelo diff acelera o PR. Aceite com condições:
+Rodar só os testes afetados pelo diff acelera o ciclo local. Aceite com condições:
 
 - **Mapa arquivo -> teste** derivado do grafo de dependências (build tool) ou da cobertura por teste,
-  regenerado no nightly; mapa velho é falso verde.
+  regenerado a cada pré-hml; mapa velho é falso verde.
 - **Falha segura:** arquivo sem entrada no mapa, mudança em configuração, build, dependência,
   `Dockerfile`, esquema do banco ou código gerado => **suíte completa**.
-- **A completa roda no merge.** Sem isso, seleção por impacto é só pular teste com outro nome.
-- Reporte o que foi **selecionado e o que foi pulado** no resumo do PR, para ninguém achar que a
+- **A completa roda pré-hml.** Sem isso, seleção por impacto é só pular teste com outro nome.
+- Reporte o que foi **selecionado e o que foi pulado** no resumo da entrega, para ninguém achar que a
   suíte inteira passou.
 
 ## 4. Nunca pular
 
 **VETADO**
 - Pular, desligar ou rebaixar a suíte de regressão "para agilizar" um merge, um release ou um hotfix.
-  Hotfix é onde a regressão mais ataca; ele roda a regressão completa.
+  Hotfix é onde a regressão mais ataca; ele roda a regressão completa (local, pelo `ci.sh`, e pré-hml).
 - Marcar o job como `allow-failure` ou "não bloqueante" para destravar. Job que não bloqueia não é gate.
 - Retry automático até passar (esconde corrida real; ver `schematize-qa -> references/flaky.md`).
 - Suíte lenta resolvida por **apagar teste**. Resolva por paralelismo, fixtures mais baratas, nível mais

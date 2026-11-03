@@ -16,8 +16,14 @@
 #   regression-skip: <motivo> <@dono> <AAAA-MM-DD>   autoriza skip/quarentena ou teste removido (cite o ADR)
 #   regression-ok: fix-sem-teste <motivo>            (corpo do commit) fix sem teste automatizável possível
 #   regression-snapshot: <motivo>                    (corpo do commit) snapshot revisado por humano
-# Entrada: check-regression.sh [dir] [--range A..B]   dir padrão "."; range padrão origin/main..HEAD
-#   (senão origin/master, o upstream da branch, main ou master).
+# Entrada: check-regression.sh [dir] [--range A..B]   dir padrão "."
+#   Range padrão (piso 22: commit+push na hora deixa origin/main..HEAD sempre vazio): o ÚLTIMO MARCO —
+#   a tag hml-*/v* mais recente alcançável que não seja o próprio HEAD —; sem tag, origin/main..HEAD
+#   (ou o upstream/main) SE tiver commits; senão os últimos 20 commits (HEAD~20..HEAD). O range escolhido
+#   é impresso no resumo.
+#   Marcador `regression-skip:` em MENSAGEM de commit só vale para o arquivo que ele nomeia (caminho ou
+#   nome do arquivo no fim da linha); marcador sem arquivo não libera nada (aviso marcador-sem-arquivo).
+#   Na linha adicionada, o marcador vale para aquela linha.
 # Saída: 0 passa · 1 reprova · 2 nada para verificar (sem commits no range, não é repo) — NÃO é aprovação.
 set -euo pipefail
 
@@ -34,21 +40,34 @@ done
 g() { git -C "$DIR" "$@"; }
 g rev-parse --git-dir >/dev/null 2>&1 || { echo "check-regression: '$DIR' não é um repositório git — nada para verificar" >&2; exit 2; }
 
-# O que: acha o range padrão quando --range não veio.
+# O que: acha o range padrão quando --range não veio (ver cabeçalho). Devolve 0 e preenche RANGE.
+range_nao_vazio() { [ -n "$(g rev-list --no-merges -n 1 "$1" 2>/dev/null)" ]; }
 resolver_range() {
-  local ref up cur
+  local ref up cur tag head_sha n
+  head_sha="$(g rev-parse --verify -q HEAD 2>/dev/null)" || return 1
+  # 1. último marco (tag de promoção) que não aponta para o próprio HEAD
+  while IFS= read -r tag; do
+    [ -n "$tag" ] || continue
+    [ "$(g rev-parse --verify -q "$tag^{commit}")" = "$head_sha" ] && continue
+    RANGE="$tag..HEAD"; return 0
+  done < <(g tag --merged HEAD --sort=-creatordate --list 'hml-*' 'v*' 2>/dev/null)
+  # 2. sem marco: a base remota, mas só se ela não for vazia (push imediato esvazia)
   for ref in origin/main origin/master; do
-    if g rev-parse --verify -q "$ref^{commit}" >/dev/null 2>&1; then RANGE="$ref..HEAD"; return 0; fi
+    if g rev-parse --verify -q "$ref^{commit}" >/dev/null 2>&1 && range_nao_vazio "$ref..HEAD"; then RANGE="$ref..HEAD"; return 0; fi
   done
-  if up="$(g rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null)"; then RANGE="$up..HEAD"; return 0; fi
+  if up="$(g rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null)" && range_nao_vazio "$up..HEAD"; then RANGE="$up..HEAD"; return 0; fi
   cur="$(g rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
   for ref in main master; do
-    if [ "$cur" != "$ref" ] && g rev-parse --verify -q "$ref^{commit}" >/dev/null 2>&1; then RANGE="$ref..HEAD"; return 0; fi
+    if [ "$cur" != "$ref" ] && g rev-parse --verify -q "$ref^{commit}" >/dev/null 2>&1 && range_nao_vazio "$ref..HEAD"; then RANGE="$ref..HEAD"; return 0; fi
   done
-  return 1
+  # 3. janela limitada: os últimos 20 commits (ou o histórico todo, se menor)
+  n="$(g rev-list --count HEAD 2>/dev/null || echo 0)"
+  [ "$n" -gt 0 ] || return 1
+  if [ "$n" -gt 20 ]; then RANGE="HEAD~20..HEAD"; else RANGE="$(g rev-list --max-parents=0 HEAD | tail -n 1)..HEAD"; fi   # histórico curto: da raiz (exclusiva) até HEAD
+  return 0
 }
 if [ -z "$RANGE" ] && ! resolver_range; then
-  echo "check-regression: sem origin/main, upstream nem main para comparar — informe --range A..B (nada para verificar)" >&2
+  echo "check-regression: sem commits, tag, origin/main nem main para comparar — informe --range A..B (nada para verificar)" >&2
   exit 2
 fi
 
@@ -109,11 +128,31 @@ avisar_vencido() { # avisar_vencido <linha> <origem>
   fi
 }
 
-# Todas as mensagens do range: um marcador aqui vale para o range (revisado no PR).
+# Marcadores em MENSAGENS de commit: só os VÁLIDOS entram, e cada um só vale para o arquivo que nomeia
+# (caminho ou nome do arquivo na linha). Marcador sem arquivo não libera nada.
 MSGS="$(g log --no-merges --format=%B "$BASE..$R")"
-MSG_MARC_OK=1
+MARC_MSG="$(mktemp)"; trap 'rm -f "${MARC_MSG:?}"' EXIT
 if printf '%s' "$MSGS" | grep -q "$MARC_ANY_RE"; then
-  if marcador_valido "$MSGS" "mensagens($RANGE)"; then MSG_MARC_OK=0; fi
+  while IFS= read -r l; do
+    printf '%s' "$l" | grep -q "$MARC_ANY_RE" || continue
+    if printf '%s' "$l" | grep -Eq "$MARC_RE"; then
+      avisar_vencido "$l" "mensagens($RANGE)"
+      printf '%s\n' "$l" >> "$MARC_MSG"
+    else
+      erro "mensagens($RANGE)" "marcador-invalido" "regression-skip exige <motivo> <@dono> <AAAA-MM-DD> <arquivo>: '$(printf '%s' "$l" | cut -c1-100)'"
+    fi
+  done <<<"$MSGS"
+fi
+# cobre <arquivo>: 0 se algum marcador de mensagem nomeia esse arquivo (caminho completo ou basename).
+cobre() {
+  [ -s "$MARC_MSG" ] || return 1
+  grep -qF -- "$1" "$MARC_MSG" || grep -qF -- "$(basename "$1")" "$MARC_MSG"
+}
+if [ -s "$MARC_MSG" ]; then
+  while IFS= read -r l; do
+    d="$(printf '%s' "$l" | sed -E 's/.*[0-9]{4}-[0-9]{2}-[0-9]{2}//')"
+    [ -n "$(printf '%s' "$d" | tr -d '[:space:]')" ] || aviso "mensagens($RANGE)" "marcador-sem-arquivo" "regression-skip sem arquivo no fim da linha não libera nada: '$(printf '%s' "$l" | cut -c1-80)'"
+  done < "$MARC_MSG"
 fi
 
 prev_teste=1   # 0 quando o commit imediatamente anterior é `test:` e toca teste
@@ -152,7 +191,7 @@ done <<<"$COMMITS"
 # Teste apagado (arquivo inteiro).
 while IFS=$'\t' read -r st path; do
   [ "$st" = "D" ] || continue
-  if eh_teste "$path" && [ "$MSG_MARC_OK" -ne 0 ]; then
+  if eh_teste "$path" && ! cobre "$path"; then
     erro "$path" "teste-removido" "arquivo de teste apagado: teste de regressão é permanente; remover exige ADR e 'regression-skip: <motivo> <@dono> <AAAA-MM-DD>' no commit"
   fi
 done < <(g diff --name-status -M --no-ext-diff "$BASE" "$R")
@@ -164,7 +203,7 @@ if [ -n "$DIFF" ]; then
   # awk: por arquivo (não apagado), conta declarações de teste removidas vs adicionadas.
   while IFS=$'\t' read -r path rem add; do
     [ -n "$path" ] || continue
-    if eh_teste "$path" && [ "$rem" -gt "$add" ] && [ "$MSG_MARC_OK" -ne 0 ]; then
+    if eh_teste "$path" && [ "$rem" -gt "$add" ] && ! cobre "$path"; then
       erro "$path" "teste-removido" "$((rem - add)) caso(s) de teste a menos: remover teste exige ADR e 'regression-skip: <motivo> <@dono> <AAAA-MM-DD>' no commit"
     fi
   done < <(printf '%s\n' "$DIFF" | DECL_RE="$DECL_RE" awk '
@@ -183,8 +222,8 @@ if [ -n "$DIFF" ]; then
     if printf '%s' "$texto" | grep -Eq "$SKIP_RE"; then
       if printf '%s' "$texto" | grep -q "$MARC_ANY_RE"; then
         marcador_valido "$texto" "$path:$ln" || erro "$path:$ln" "skip-sem-marcador" "skip adicionado com marcador inválido: '$(printf '%s' "$texto" | sed -E 's/^[[:space:]]+//' | cut -c1-80)'"
-      elif [ "$MSG_MARC_OK" -ne 0 ]; then
-        erro "$path:$ln" "skip-sem-marcador" "skip/only/ignore adicionado sem 'regression-skip: <motivo> <@dono> <AAAA-MM-DD>' (linha ou commit): '$(printf '%s' "$texto" | sed -E 's/^[[:space:]]+//' | cut -c1-80)'"
+      elif ! cobre "$path"; then
+        erro "$path:$ln" "skip-sem-marcador" "skip/only/ignore adicionado sem 'regression-skip: <motivo> <@dono> <AAAA-MM-DD>' (na linha, ou na mensagem nomeando o arquivo): '$(printf '%s' "$texto" | sed -E 's/^[[:space:]]+//' | cut -c1-80)'"
       fi
     fi
   done < <(printf '%s\n' "$DIFF" | awk '

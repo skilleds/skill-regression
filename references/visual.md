@@ -40,8 +40,8 @@ Mudança de baseline sem mudança de código visual no PR é suspeita e o gate a
 
 ## 5. Onde roda
 
-Componentes: em todo PR que toque o componente (rápido). Rotas completas e matriz de navegadores e
-viewports: no merge e no nightly. Acessibilidade e contraste são de outro gate
+Componentes: por commit, local, quando toca o componente (rápido). Rotas completas e matriz de navegadores e
+viewports: pré-hml (tag `hml-*`) e sob demanda. Acessibilidade e contraste são de outro gate
 (`schematize-qa -> references/categorias.md`); regressão visual não os substitui.
 
 ## 6. Regras de mídia

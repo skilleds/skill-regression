@@ -50,8 +50,8 @@ criterion, hyperfine, k6, lighthouse-ci); o princípio independe dela.
 
 ## 6. Onde roda
 
-PR: microbenchmarks rápidos dos caminhos tocados e bundle size. Nightly: o conjunto completo, com
-histórico em série temporal (a deriva lenta só aparece no gráfico). Regressão achada no nightly vira
+Local por commit: microbenchmarks rápidos dos caminhos tocados e bundle size. Pré-hml/sob demanda: o conjunto completo, com
+histórico em série temporal (a deriva lenta só aparece no gráfico). Regressão achada no conjunto completo vira
 bug com bisect (`references/bisect.md`) e teste de benchmark que a pega.
 
 ## 7. Efeito externo

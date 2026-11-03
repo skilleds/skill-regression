@@ -18,5 +18,5 @@ Alvo: `${ARGUMENTS}`. Leia antes `references/visual.md`.
    com o motivo.
 6. **Prove que morde:** mude uma cor ou margem de propósito e veja o teste reprovar; reverta.
 
-Entregue: estados, threshold, onde roda (componente no PR, rota no merge/nightly), prova do vermelho e o
+Entregue: estados, threshold, onde roda (componente por commit local, rota pré-hml/sob demanda), prova do vermelho e o
 que não foi verificado. Mídia nova nunca pelo Claude: regra de mídia da skill.
