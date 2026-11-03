@@ -3,7 +3,7 @@
 Todas as mudanças relevantes deste pacote, no formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 com versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Não lançado]
+## [0.2.0] — 2026-11-03
 ### Corrigido
 - `check-regression.sh`: o range padrão deixa de ser `origin/main..HEAD` (sempre vazio com push imediato, piso 22): agora é o último marco `hml-*`/`v*`, senão a base remota se não vazia, senão os últimos 20 commits.
 - `regression-skip:` em mensagem de commit só vale para o arquivo que nomeia (antes um marcador liberava todos os `teste-removido`/`skip-sem-marcador` do range); marcador sem arquivo avisa e não libera nada.
